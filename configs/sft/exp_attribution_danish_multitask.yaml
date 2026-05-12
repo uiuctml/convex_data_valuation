@@ -1,0 +1,144 @@
+# ============================
+# Core setup
+# ============================
+trainer_type: sft           # <- dispatches to SFTMultiTaskTrainer
+task_type: aya-sft          # <- used by your SFT data/model wiring
+
+# Base chat model for multilingual instruction tuning
+model_name: Qwen/Qwen3-1.7B
+
+# Aya language "tasks" (by Aya `language` column, or whatever your AyaSFTDataModule expects)
+tasks:
+  - ar
+  - bn
+  - da
+  - de
+  - en
+  - es
+  - eu
+  - fr
+  - gu
+  - hi
+  - hu
+  - id
+  - it
+  - kn
+  - ml
+  - mr
+  - nl
+  - pt
+  - ru
+  - sr
+  - sv
+  - ta
+  - te
+  - uk
+  - vi
+  - zh
+
+target_task: da
+
+# Aya dataset on HF
+dataset_name: CohereLabs/aya_dataset
+
+datadir: ${DATA_DIR}
+output_dir: ${DATA_DIR}/outputs_sft_aya_qwen3_1.7b_danish
+seed: 42
+
+
+# ============================
+# Tokenization / sequence length
+# ============================
+max_seq_length: 1024 
+
+
+# ============================
+# Few-shot / k-shot setup (optional)
+# ============================
+k_shot: null
+few_shot_seed: 42
+
+# ============================
+# Dataloader performance
+# ============================
+num_workers: 8
+pin_memory: true
+drop_last: true
+
+
+# ============================
+# Training schedule (SFT)
+# ============================
+# MultiTaskTrainerBase will recompute `max_steps`
+max_steps: 25
+num_train_epochs: 1            # mostly ignored when max_steps is set (we test 5 epochs for hyperparam search)
+
+# Data module batch size
+train_batch_size: 1
+
+# Actual SFTTrainer batch sizes
+per_device_train_batch_size: 8
+per_device_eval_batch_size: 16
+
+grad_accum_steps: 2
+log_every: 5                  # logging frequency in steps
+eval_every: -1                 # -1 to disable eval during training, or e.g. 500
+# Save checkpoints every X steps
+save_strategy: "no"    # "no", "steps", or "epoch"
+
+# Optimizer / scheduler (SFT)
+lr: 1.0e-4
+weight_decay: 0.0
+warmup_ratio: 0.03
+max_grad_norm: 1.0
+lr_scheduler_type: cosine
+optim: adamw_torch
+
+
+# ============================
+# Mixture weights (multitask over languages)
+# ============================
+target_weight: 0.7             # weight mass for target_task
+aux_weight_total: 0.3          # mass to spread over other languages
+
+
+# ============================
+# Finetuning scope / LoRA
+# ============================
+load_in_4bit: false
+load_in_8bit: false
+
+use_lora: true
+lora_r: 8
+lora_alpha: 16
+lora_dropout: 0.05
+lora_target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+lora_task_type: CAUSAL_LM
+
+
+# ============================
+# Precision / memory
+# ============================
+bf16: true
+fp16: false
+torch_dtype: bfloat16            # used at load time
+device_map: null                 # let Accelerate / HF handle placement
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+
+# ============================
+# Evaluation mode
+# ============================
+# eval_mode:
+#   - 'hf':     SFTTrainer.evaluate (loss / ppl)
+#   - 'lmeval': external lm-eval harness (via tmux script)
+eval_mode: hf
+
+# lm-eval configuration (used only when eval_mode='lmeval')
+lmeval_tasks: "m_mmlu_da"          # or comma-separated: "m_mmlu,belebele"
+lmeval_batch_size: 1
+lmeval_gpu: "1"

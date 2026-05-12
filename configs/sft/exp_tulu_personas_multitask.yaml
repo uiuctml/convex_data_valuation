@@ -1,0 +1,95 @@
+# ============================
+# ICML26 Rebuttal Stage 2: Tulu-3 Personas Multitask Attribution → IFEval
+# All 5 subsets, target = instruction-following
+# ============================
+
+trainer_type: sft
+task_type: tulu-personas-sft
+
+model_name: meta-llama/Llama-3.2-1B
+
+tasks:
+  - instruction-following
+  - math-filtered
+  - math-grade-filtered
+  - algebra
+  - code
+
+target_task: instruction-following
+
+max_samples: 3000
+sample_seed: 42
+
+datadir: /data/common/cindy2000_sh/multisource_data_selection
+output_dir: /data/common/cindy2000_sh/multisource_data_selection/outputs_sft_tulu_personas_multitask_llama3.2_1b
+seed: 42
+
+max_seq_length: 2048
+
+k_shot: null
+few_shot_seed: 42
+
+num_workers: 4
+pin_memory: true
+drop_last: true
+
+max_steps: 170
+num_train_epochs: 1
+
+# Total token budget for attribution (max_steps * effective_batch * max_seq_length)
+# 170 * 16 * 2048 = 5,570,560
+global_token_budget: 5570560
+
+train_batch_size: 1
+eval_batch_size: 16
+
+per_device_train_batch_size: 8
+per_device_eval_batch_size: 8
+
+grad_accum_steps: 2
+log_every: 10
+eval_every: -1
+
+save_strategy: "no"
+
+lr: 2.0e-5
+weight_decay: 0.0
+warmup_ratio: 0.03
+max_grad_norm: 1.0
+lr_scheduler_type: cosine
+optim: adamw_torch
+
+target_weight: 0.7
+aux_weight_total: 0.3
+
+load_in_4bit: false
+load_in_8bit: false
+
+use_lora: true
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+lora_target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - up_proj
+  - down_proj
+  - gate_proj
+lora_task_type: CAUSAL_LM
+
+bf16: true
+fp16: false
+torch_dtype: bfloat16
+device_map: null
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+
+eval_mode: hf
+lmeval_tasks: "ifeval"
+lmeval_batch_size: "auto"
+lmeval_gpu: "1"
+
+report_to: ["wandb"]

@@ -1,0 +1,157 @@
+# ============================
+# Core setup
+# ============================
+trainer_type: grpo          # <- dispatches to GRPOMultiTaskTrainer
+task_type: big-math-gsm8k         # <- used by your modeling / param strategy
+
+model_name: Qwen/Qwen2.5-1.5B-Instruct
+tasks:
+  - th
+  - zh
+  - vi
+  - en
+  - hi
+  - es
+
+target_task: th       # <- subject we care about
+
+dataset_name: cindy2000sh/Big-Math-RL-GSM8K-googletrans
+
+datadir: ${DATA_DIR}
+output_dir: ${DATA_DIR}/outputs_qwen2.5_1.5b_instruct_multilingual_grpo_th
+seed: 42
+
+
+# ============================
+# Tokenization / sequence length
+# ============================
+
+# These are *prompt+completion* budgets for the GRPO generation
+max_prompt_length: 256          # how long the question + system prompt can be
+max_completion_length: 1024      # how long the model is allowed to answer
+max_seq_length: 1280            # tokenizer's model_max_length (256 + 1024)
+
+
+# ============================
+# Few-shot setup on MATH
+# ============================
+# If you want full data, keep this null.
+k_shot: null
+few_shot_seed: 42
+# few_shot:               # optional per-task overrides if you want
+#   geometry: 512
+#   number_theory: 512
+
+
+# ============================
+# Dataloader performance
+# ============================
+num_workers: 8
+pin_memory: true
+drop_last: true
+
+
+# ============================
+# Training schedule / GRPO
+# ============================
+max_steps: 500
+num_train_epochs: 1          # ignored if max_steps is set, just to make HF happy
+
+train_batch_size: 1             # data module
+per_device_train_batch_size: 8  # 64
+per_device_eval_batch_size: 8
+
+# GRPO / generation-specific knobs
+num_generations: 8              # samples per prompt for GRPO
+temperature: 0.6
+beta: 0.005                     # GRPO KL/divergence coefficient
+top_p: 0.95
+
+# Optimizer / scheduler
+lr: 1.0e-6
+weight_decay: 1.0e-4
+warmup_ratio: 0.04
+warmup_steps: 0
+max_grad_norm: 1.0
+grad_accum_steps: 1
+log_every: 1
+eval_every: -1                  # set -1 to disable eval during training
+save_strategy: "no"
+
+lr_scheduler_type: cosine
+optim: adamw_torch
+
+
+
+# ============================
+# Mixture weights (multitask)
+# ============================
+target_weight: 0.7
+aux_weight_total: 0.3
+
+
+# ============================
+# Finetuning scope / LoRA
+# ============================
+# Enable 4-bit quantization for memory efficiency
+load_in_4bit: false
+load_in_8bit: false
+
+# LoRA defaults — keep your old values
+use_lora: true
+lora_r: 8
+lora_alpha: 32
+lora_dropout: 0.05
+lora_target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - up_proj
+  - down_proj
+  - gate_proj
+lora_task_type: CAUSAL_LM
+
+
+
+# ============================
+# Precision / memory
+# ============================
+bf16: true
+fp16: false
+torch_dtype: bfloat16            # dtype for model loading (used with 4-bit)
+device_map: null                 # auto device mapping for quantized models
+gradient_checkpointing: true
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+
+# ============================
+# vLLM integration
+# ============================
+# Start with use_vllm=false; flip to true when you have vLLM running.
+use_vllm: true
+vllm_mode: server
+vllm_server_base_url: "http://localhost:10245"
+vllm_gpu: "6"
+vllm_port: 10245
+vllm_model_name_or_path: null   # if null, use cfg.model_name
+vllm_importance_sampling_correction: false
+vllm_startup_timeout: 1000        # seconds to wait for vLLM server to start
+
+
+
+# ============================
+# Evaluation mode
+# ============================
+eval_mode: lmeval
+
+# lm-eval configuration (used when eval_mode='lmeval')
+lmeval_tasks: "mgsm_direct_th"
+lmeval_batch_size: "auto"
+lmeval_gpu: "7"
+lmeval_dtype: "auto"
+lmeval_tensor_parallel_size: "1"
+lmeval_gpu_memory_utilization: "0.8"
+lmeval_max_model_len: "20000"
+lmeval_system_instruction: "Please reason step by step, and put your final answer within \\boxed{}."
+lmeval_gen_kwargs: "do_sample=True,temperature=0.6,top_p=0.95,max_gen_toks=20000"
