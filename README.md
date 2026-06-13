@@ -1,6 +1,17 @@
-# Multisource Data Attribution for Multilingual Models
+# Convex Dataset Valuation for Post-Training
 
-A framework for multitask learning and data attribution on multilingual instruction-tuning and math reasoning tasks. Supports both Supervised Fine-Tuning (SFT) and Group Relative Policy Optimization (GRPO) training paradigms.
+[![arXiv](https://img.shields.io/badge/arXiv-2605.16704-b31b1b.svg)](https://arxiv.org/abs/2605.16704)
+[![GitHub](https://img.shields.io/badge/GitHub-uiuctml%2Fconvex__data__valuation-181717.svg?logo=github)](https://github.com/uiuctml/convex_data_valuation)
+[![Slides](https://img.shields.io/badge/Slides-PDF-blue.svg)](https://icml.cc/media/icml-2026/Slides/61645.pdf)
+[![Poster](https://img.shields.io/badge/Poster-PNG-orange.svg)](https://icml.cc/media/PosterPDFs/ICML%202026/61645.png?t=1781058738.7097435)
+
+![Convex Dataset Valuation overview](image.png)
+
+This is the official repository implementing the convex dataset valuation method from [*Convex Dataset Valuation for Post-Training*](https://arxiv.org/abs/2605.16704) at ICML 2026.
+
+## Introduction
+
+Improving LLM performance on downstream tasks sometimes requires leveraging auxiliary datasets during post-training. In practice, however, developers face constraints on compute, labeling, and licensing costs that preclude using all available data, necessitating principled dataset-level selection. These constraints are increasingly shaped by dataset marketplaces, where data acquisition is governed by budgets and negotiation. We study dataset valuation as a subset selection problem during LLM post-training. Our goal is to identify and weight auxiliary datasets so as to maximize target task performance given constrained budgets. We first show that commonly used gradient alignment scores provide a reasonable yet incomplete valuation signal, as they ignore redundancy among datasets. To address this, we propose a scalable convex dataset-level valuation method based on kernel mean matching (KMM) in gradient space, which jointly accounts for alignment with the target task and redundancy across auxiliary datasets. Through extensive experiments across diverse post-training settings and tasks, we show that our approach consistently outperforms existing valuation baselines, achieving stronger performance with low computational overhead. Our results position dataset valuation as a practical decision tool for post-training data selection in market-constrained large language model settings.
 
 ## Environment Setup
 
@@ -63,7 +74,8 @@ multisource_data/
 │   └── grpo/             # GRPO experiment configs
 ├── data/                 # Data modules for different datasets
 │   ├── aya/              # AYA multilingual instruction dataset
-│   └── big_math_gsm8k/   # Multilingual math reasoning dataset
+│   ├── big_math_gsm8k/   # Multilingual math reasoning dataset
+│   └── tulu_personas/    # Tulu persona instruction-following dataset
 ├── lm-evaluation-harness/# Evaluation framework (local edited version)
 ├── modeling/             # Model parameter configurations
 ├── scripts/              # Shell scripts for running experiments
@@ -224,3 +236,16 @@ The framework supports multiple data attribution methods:
 - **Training outputs, checkpoints, and logs:** Saved to `${DATA_DIR}/outputs_*/` directories
 - **Datamodel caching:** Saved to local `outputs/datamodel_cache/` directory
 - **Experiment tracking:** Weights & Biases (wandb)
+
+## Citation
+
+```bibtex
+@inproceedings{
+zeng2026convex,
+title={Convex Dataset Valuation for Post-Training},
+author={Siqi Zeng and Christopher Jung and Rui Li and Zhe Kang and Ming Li and Nima Noorshams and Zhigang Wang and Fuchun Peng and Han Zhao and Xue Feng},
+booktitle={Forty-third International Conference on Machine Learning},
+year={2026},
+url={https://openreview.net/forum?id=oAAL0wZSMF}
+}
+```
